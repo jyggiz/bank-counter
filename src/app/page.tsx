@@ -1,76 +1,51 @@
-import Image from 'next/image';
+'use client';
 
-import styles from './page.module.css';
+import { Button, Flex, Text, Theme } from '@radix-ui/themes';
+import { useEffect, useState } from 'react';
+
+import '@radix-ui/themes/styles.css';
+
+import CounterTable from './components/counter-table/CounterTable';
+import Form, { HandleSubmitProps } from './components/form/Form';
+import { useCounters } from './hooks/useCounter';
+import { useWaitingClients } from './hooks/useWaitingClients';
+import { QueueApp } from './models/queueApp';
+
+const COUNTER_COUNT = 4;
 
 export default function Home() {
+  const [queue, setQueue] = useState<QueueApp | null>(null);
+  const { counters, resetCounters } = useCounters(COUNTER_COUNT);
+  const waitingClientCount = useWaitingClients();
+
+  function onNewClientButtonClick(): void {
+    queue?.addClient();
+  }
+
+  function handleSubmit({ countersConfigList, startNumber }: HandleSubmitProps): void {
+    queue?.destroy();
+    resetCounters();
+
+    setQueue(new QueueApp(countersConfigList, startNumber));
+  }
+
+  useEffect(() => {
+    return () => {
+      queue?.destroy();
+    };
+  }, [queue]);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a href="https://vercel.com?utm_source=typescript-nextjs-starter" target="_blank" rel="noopener noreferrer">
-            By{' '}
-            <Image src="/vercel.svg" alt="Vercel Logo" className={styles.vercelLogo} width={100} height={24} priority />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image className={styles.logo} src="/next.svg" alt="Next.js Logo" width={180} height={37} priority />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=typescript-nextjs-starter"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=typescript-nextjs-starter"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=typescript-nextjs-starter"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=typescript-nextjs-starter"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>Instantly deploy your Next.js site to a shareable URL with Vercel.</p>
-        </a>
-      </div>
-    </main>
+    <Theme>
+      <Flex align="center" direction="column" justify="center" maxWidth="1000px" mx="auto" my="0">
+        <CounterTable counters={counters} />
+        <Text mt="4">Number of people waiting: {waitingClientCount}</Text>
+        <Button my="4" onClick={onNewClientButtonClick} disabled={queue === null}>
+          Next {queue?.nextNewClientNumber || 1}
+        </Button>
+        <hr />
+        <Form countersCount={COUNTER_COUNT} handleSubmit={handleSubmit} />
+      </Flex>
+    </Theme>
   );
 }
